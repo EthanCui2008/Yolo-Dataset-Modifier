@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Label Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Toolbar -->
+    <header class="toolbar">
+        <div class="toolbar-group">
+            <button id="btn-load" title="Load Folder (Ctrl+O)">
+                <span class="icon">&#128193;</span> Load Folder
+            </button>
+            <button id="btn-save" title="Save Current (Ctrl+S)" disabled>
+                <span class="icon">&#128190;</span> Save
+            </button>
+            <button id="btn-save-all" title="Save All (Ctrl+Shift+S)" disabled>
+                <span class="icon">&#128230;</span> Save All
+            </button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-group">
+            <button id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+                <span class="icon">&#8617;</span> Undo
+            </button>
+            <button id="btn-redo" title="Redo (Ctrl+Y)" disabled>
+                <span class="icon">&#8618;</span> Redo
+            </button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-group">
+            <button id="btn-delete" title="Delete Selected (D)" disabled>
+                <span class="icon">&#128465;</span> Delete
+            </button>
+            <button id="btn-select-all" title="Select All (Ctrl+A)" disabled>
+                <span class="icon">&#9744;</span> Select All
+            </button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <div class="toolbar-group">
+            <button id="btn-zoom-fit" title="Fit to Screen (F)" disabled>
+                <span class="icon">&#8862;</span> Fit
+            </button>
+            <button id="btn-zoom-in" title="Zoom In (+)" disabled>
+                <span class="icon">&#128269;+</span>
+            </button>
+            <button id="btn-zoom-out" title="Zoom Out (-)" disabled>
+                <span class="icon">&#128269;-</span>
+            </button>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-group">
+            <button id="btn-help" title="Keyboard Shortcuts (?)">
+                <span class="icon">?</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Sidebar: Image List -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Images</span>
+                <span class="sidebar-count" id="image-count">0 images</span>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="search-images" placeholder="Search images...">
+            </div>
+            <div class="image-list" id="image-list">
+                <!-- Image items will be rendered here -->
+            </div>
+        </aside>
+
+        <!-- Resize Handle -->
+        <div class="resize-handle" id="resize-handle"></div>
+
+        <!-- Canvas Area -->
+        <section class="canvas-area" id="canvas-container">
+            <canvas id="main-canvas"></canvas>
+
+            <!-- Drop zone overlay (shown when no folder loaded) -->
+            <div class="drop-zone" id="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="drop-icon">&#128193;</div>
+                    <p class="drop-title">Drop YOLO Dataset Folder Here</p>
+                    <p class="drop-hint">or click "Load Folder" button</p>
+                    <p class="drop-format">Expected structure: images/ and labels/ folders</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <div class="status-left">
+            <span class="status-item" id="status-image">No image loaded</span>
+            <span class="status-separator">|</span>
+            <span class="status-item" id="status-boxes">0 boxes</span>
+            <span class="status-separator">|</span>
+            <span class="status-item" id="status-selected">0 selected</span>
+        </div>
+        <div class="status-center">
+            <span class="status-item status-modified hidden" id="status-modified">&#9679; Modified</span>
+        </div>
+        <div class="status-right">
+            <span class="status-item" id="status-zoom">Zoom: 100%</span>
+            <span class="status-separator">|</span>
+            <span class="status-item" id="status-position">-</span>
+        </div>
+    </footer>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <dialog id="shortcuts-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Keyboard Shortcuts</h2>
+                <button class="modal-close" id="close-shortcuts">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="shortcuts-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><kbd>D</kbd> / <kbd>Delete</kbd></td><td>Delete selected boxes</td></tr>
+                        <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo</td></tr>
+                        <tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Redo</td></tr>
+                        <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save current image</td></tr>
+                        <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>Save all modified</td></tr>
+                        <tr><td><kbd>&#8592;</kbd> / <kbd>K</kbd></td><td>Previous image</td></tr>
+                        <tr><td><kbd>&#8594;</kbd> / <kbd>J</kbd></td><td>Next image</td></tr>
+                        <tr><td><kbd>Home</kbd></td><td>First image</td></tr>
+                        <tr><td><kbd>End</kbd></td><td>Last image</td></tr>
+                        <tr><td><kbd>Escape</kbd></td><td>Clear selection</td></tr>
+                        <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>Select all boxes</td></tr>
+                        <tr><td><kbd>F</kbd></td><td>Fit to screen</td></tr>
+                        <tr><td><kbd>+</kbd> / <kbd>=</kbd></td><td>Zoom in</td></tr>
+                        <tr><td><kbd>-</kbd></td><td>Zoom out</td></tr>
+                        <tr><td><kbd>G</kbd></td><td>Go to image number</td></tr>
+                        <tr><td><kbd>Q</kbd></td><td>Delete selected + next image</td></tr>
+                        <tr><td><kbd>Shift</kbd>+drag</td><td>Add to selection</td></tr>
+                        <tr><td><kbd>Ctrl</kbd>+click</td><td>Toggle individual box</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Go To Image Modal -->
+    <dialog id="goto-modal" class="modal modal-small">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Go To Image</h2>
+                <button class="modal-close" id="close-goto">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="goto-input">Image number (1 - <span id="goto-max">0</span>):</label>
+                <input type="number" id="goto-input" min="1" max="1">
+                <div class="modal-actions">
+                    <button id="goto-cancel" class="btn-secondary">Cancel</button>
+                    <button id="goto-confirm" class="btn-primary">Go</button>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Notification Container -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
